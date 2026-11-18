@@ -1,0 +1,38 @@
+name: Build Vocal Leveler AU & PKG
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B build -G Xcode
+
+      - name: Build AU Plugin (Release)
+        run: cmake --build build --config Release --target VocalLeveler_AU
+
+      - name: Create macOS Installer (.pkg)
+        run: |
+          mkdir -p dist
+          COMPONENT_PATH="build/VocalLeveler_artefacts/Release/AU/Vocal Leveler.component"
+          pkgbuild --component "$COMPONENT_PATH" \
+                   --install-location "/Library/Audio/Plug-Ins/Components" \
+                   --identifier "com.rickyhype.vocalleveler.pkg" \
+                   --version "0.1.0" \
+                   "dist/Vocal_Leveler_Installer.pkg"
+
+      - name: Upload AU & Installer Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vocal-Leveler-macOS
+          path: |
+            build/VocalLeveler_artefacts/Release/AU/Vocal Leveler.component
+            dist/Vocal_Leveler_Installer.pkg
